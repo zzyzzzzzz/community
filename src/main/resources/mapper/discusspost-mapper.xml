@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nowcoder.community.dao.DiscussPostMapper">
+
+    <!-- 定义复用的字段选择SQL，避免重复写字段 -->
+    <sql id="selectFields">
+        id, user_id, title, content, type, status, create_time, comment_count, score
+    </sql>
+
+    <!--
+        查询帖子列表（带分页），支持根据用户ID过滤。
+        当 userId != 0 时，查询指定用户的帖子；
+        当 userId == 0 时，查询所有用户的帖子。
+        按帖子类型 type（降序） 和 创建时间 create_time（降序） 排序。
+        实现分页功能：offset 是查询的起始位置，limit 是每页最多显示多少条记录。
+    -->
+    <select id="selectDiscussPosts" resultType="DiscussPost">
+        select <include refid="selectFields"></include>
+        from discuss_post
+        where status != 2  <!-- 过滤被拉黑的帖子（status = 2） -->
+        <if test="userId != 0">
+            and user_id = #{userId}  <!-- 当 userId 不为 0 时，查询该用户的帖子 -->
+        </if>
+        order by type desc, create_time desc  <!-- 先按 type 排序，再按 create_time 排序 -->
+        limit #{offset}, #{limit}  <!-- 分页查询：从 offset 开始，查询 limit 条记录 -->
+    </select>
+
+    <!--
+        查询帖子总行数，用于分页时计算总页数。
+        支持根据用户ID过滤。
+    -->
+    <select id="selectDiscussRows" resultType="int">
+        select count(id)  <!-- 统计帖子总数 -->
+        from discuss_post
+        where status != 2  <!-- 过滤被拉黑的帖子（status = 2） -->
+        <if test="userId != 0">
+            and user_id = #{userId}  <!-- 当 userId 不为 0 时，查询该用户的帖子总数 -->
+        </if>
+    </select>
+
+</mapper>
